@@ -72,13 +72,20 @@ def qemu_command(args, arch, device, img_path):
         cmdline = args.cmdline
     logging.info("cmdline: " + cmdline)
 
+    ssh_port = str(args.port)
+    telnet_port = str(args.port + 1)
+    telnet_debug_port = str(args.port + 2)
+
     rootfs = args.work + "/chroot_rootfs_" + device
     command = [qemu_bin]
     command += ["-kernel", rootfs + "/boot/vmlinuz-postmarketos"]
     command += ["-initrd", rootfs + "/boot/initramfs-postmarketos"]
     command += ["-append", '"' + cmdline + '"']
     command += ["-m", str(args.memory)]
-    command += ["-redir", "tcp:" + str(args.port) + "::22"]
+    command += ["-netdev", "user,id=net0,"
+                           "hostfwd=tcp::" + ssh_port + "-:22,"
+                           "hostfwd=tcp::" + telnet_port + "-:23,"
+                           "hostfwd=tcp::" + telnet_debug_port + "-:24"]
 
     if deviceinfo["dtb"] != "":
         dtb_image = rootfs + "/usr/share/dtb/" + deviceinfo["dtb"] + ".dtb"
@@ -89,10 +96,12 @@ def qemu_command(args, arch, device, img_path):
     if arch == "x86_64":
         command += ["-serial", "stdio"]
         command += ["-drive", "file=" + img_path + ",format=raw"]
+        command += ["-device", "e1000,netdev=net0"]
 
     elif arch == "arm":
         command += ["-M", "vexpress-a9"]
         command += ["-sd", img_path]
+        command += ["-device", "virtio-net-device,netdev=net0"]
 
     elif arch == "aarch64":
         command += ["-M", "virt"]
@@ -140,6 +149,10 @@ def run(args):
     command = qemu_command(args, arch, device, img_path)
 
     logging.info("Command: " + " ".join(command))
-    logging.info("You can login to postmarketOS using SSH:")
-    logging.info("ssh -p " + str(args.port) + " user@localhost")
+    print()
+    logging.info("You can connect to the Virtual Machine using the"
+                 " following services:")
+    logging.info("(ssh) ssh -p " + str(args.port) + " user@localhost")
+    logging.info("(telnet) telnet localhost " + str(args.port + 1))
+    logging.info("(telnet debug) telnet localhost " + str(args.port + 2))
     pmb.helpers.run.user(args, command)
