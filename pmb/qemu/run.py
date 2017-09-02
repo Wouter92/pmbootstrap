@@ -107,6 +107,7 @@ def qemu_command(args, arch, device, img_path):
         command += ["-M", "virt"]
         command += ["-cpu", "cortex-a57"]
         command += ["-device", "virtio-gpu-pci"]
+        command += ["-device", "virtio-net-device,netdev=net0"]
 
         # add storage
         command += ["-device", "virtio-blk-device,drive=system"]
