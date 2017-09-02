@@ -25,6 +25,7 @@ import pmb.chroot
 import pmb.chroot.apk
 import pmb.chroot.other
 import pmb.chroot.initfs
+import pmb.config
 import pmb.helpers.devices
 import pmb.helpers.run
 import pmb.parse.arch
@@ -82,10 +83,13 @@ def qemu_command(args, arch, device, img_path):
     command += ["-initrd", rootfs + "/boot/initramfs-postmarketos"]
     command += ["-append", '"' + cmdline + '"']
     command += ["-m", str(args.memory)]
-    command += ["-netdev", "user,id=net0,"
-                           "hostfwd=tcp::" + ssh_port + "-:22,"
-                           "hostfwd=tcp::" + telnet_port + "-:23,"
-                           "hostfwd=tcp::" + telnet_debug_port + "-:24"]
+    command += ["-netdev",
+                "user,id=net0,"
+                "hostfwd=tcp::" + ssh_port + "-:22,"
+                "hostfwd=tcp::" + telnet_port + "-:23,"
+                "hostfwd=tcp::" + telnet_debug_port + "-:24"
+                ",net=172.16.42.0/24,dhcpstart=" + pmb.config.default_ip
+                ]
 
     if deviceinfo["dtb"] != "":
         dtb_image = rootfs + "/usr/share/dtb/" + deviceinfo["dtb"] + ".dtb"
